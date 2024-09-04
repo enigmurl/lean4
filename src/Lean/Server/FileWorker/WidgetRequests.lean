@@ -131,4 +131,5 @@ def lazyTraceChildrenToInteractive (children : WithRpcRef LazyTraceChildren) :
 
 builtin_initialize registerBuiltinRpcProcedure ``lazyTraceChildrenToInteractive _ _ lazyTraceChildrenToInteractive
 
+
 end Lean.Widget

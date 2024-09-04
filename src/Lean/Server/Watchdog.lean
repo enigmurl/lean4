@@ -1044,6 +1044,7 @@ def mkLeanServerCapabilities : ServerCapabilities := {
   renameProvider? := some {
     prepareProvider := true
   }
+  inlayHintProvider := true
   workspaceSymbolProvider := true
   documentHighlightProvider := true
   documentSymbolProvider := true

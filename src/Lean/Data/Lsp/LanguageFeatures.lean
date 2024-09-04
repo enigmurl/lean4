@@ -432,5 +432,16 @@ structure RenameParams extends TextDocumentPositionParams where
 structure PrepareRenameParams extends TextDocumentPositionParams
   deriving FromJson, ToJson
 
+structure InlayHintParams extends WorkDoneProgressParams where
+  textDocument : TextDocumentIdentifier
+  range        : Range
+  deriving FromJson, ToJson
+
+structure InlayHint where
+  position : Position
+  label: String
+  kind: Nat
+  deriving FromJson, ToJson
+
 end Lsp
 end Lean

@@ -430,5 +430,6 @@ structure WorkDoneProgressOptions where
   workDoneProgress := false
   deriving ToJson, FromJson
 
+
 end Lsp
 end Lean

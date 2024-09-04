@@ -77,6 +77,7 @@ structure ServerCapabilities where
   referencesProvider        : Bool                           := false
   callHierarchyProvider     : Bool                           := false
   renameProvider?           : Option RenameOptions           := none
+  inlayHintProvider         : Bool                           := false
   workspaceSymbolProvider   : Bool                           := false
   foldingRangeProvider      : Bool                           := false
   semanticTokensProvider?   : Option SemanticTokensOptions   := none

@@ -682,7 +682,66 @@ partial def handleWaitForDiagnostics (p : WaitForDiagnosticsParams)
     let doc ← liftExcept doc?
     return doc.reporter.map fun _ => pure WaitForDiagnostics.mk
 
+-- it can read request context, it can possibly fail, and it's asynchronous
+def handleInlayParam (p : InlayHintParams)
+    : RequestM (RequestTask (Option (Array InlayHint))) := do
+  let doc ← readDoc
+  let ctx ← read
+  let range := p.range
+
+  -- wait until diagnostics are finished
+  RequestM.bindTask doc.reporter (fun _ => do
+    let diags ← doc.diagnosticsRef.get
+    let hints : Array InlayHint := #[{
+      position := diags[0]!.range.end,
+      label := "Test",
+      kind := 1
+    }]
+
+    RequestM.asTask (pure (some hints))
+    )
+
+  -- return doc.reporter.map
+  --   -- NOTE: does not wait for `lineRange?` to be fully elaborated, which would be problematic with
+  --   -- fine-grained incremental reporting anyway; instead, the client is obligated to resend the
+  --   -- request when the non-interactive diagnostics of this range have changed
+  --   return (stickyDiags ++ diags).filter fun diag =>
+  --     let r := diag.fullRange
+  --     let diagStartLine := r.start.line
+  --     let diagEndLine   :=
+  --       if r.end.character == 0 then
+  --         r.end.line
+  --       else
+  --         r.end.line + 1
+  --     params.lineRange?.all fun ⟨s, e⟩ =>
+  --       -- does [s,e) intersect [diagStartLine,diagEndLine)?
+  --       s ≤ diagStartLine ∧ diagStartLine < e ∨
+  --       diagStartLine ≤ s ∧ s < diagEndLine
+  -- RequestM.bindTask t fun doc? => do
+  --   let doc ← liftExcept doc?
+  --   return doc.reporter.map fun _ => pure WaitForDiagnostics.mk
+  -- sorry
+  -- #check doc
+  -- let range := p.range
+
+  -- let task : RequestTask (Option (Array InlayHint)) := RequestTask.pure do
+  --   let hints : Array InlayHint := #[{
+  --     position := range.start,
+  --     label := "Test Hint",
+  --     kind := 1
+  --   }]
+
+  --   some hints
+
+  -- pure task
+
+
 builtin_initialize
+  registerLspRequestHandler
+    "textDocument/inlayHint"
+    InlayHintParams
+    (Option (Array InlayHint))
+    handleInlayParam
   registerLspRequestHandler
     "textDocument/waitForDiagnostics"
     WaitForDiagnosticsParams
