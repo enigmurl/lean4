@@ -6,10 +6,12 @@ Authors: Wojciech Nawrocki, Marc Huisinga
 -/
 prelude
 import Lean.Language.Lean.Types
+import Lean.Data.Lsp.LanguageFeatures
 import Lean.Server.Utils
 import Lean.Server.Snapshots
 import Lean.Server.AsyncList
 import Lean.Server.Rpc.Basic
+import Lean.Server.FileWorker.InlayHints
 
 namespace Lean.Server.FileWorker
 open Snapshots

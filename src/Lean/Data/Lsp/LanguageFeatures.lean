@@ -441,7 +441,7 @@ structure InlayHint where
   position : Position
   label: String
   kind: Nat
-  deriving FromJson, ToJson
+  deriving Inhabited, BEq, FromJson, ToJson
 
 end Lsp
 end Lean
