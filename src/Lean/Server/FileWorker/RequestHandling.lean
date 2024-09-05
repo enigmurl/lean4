@@ -693,10 +693,35 @@ def handleInlayParam (p : InlayHintParams)
 
     -- we dont want hints on warnings
     -- for check, elide the initial name
-    let diag_hints : Array InlayHint := diags.map fun diag => {
-      position:= diag.range.end,
-      label := diag.toDiagnostic.message,
-    }
+    let diag_hints : Array InlayHint := diags.filterMap fun diag =>
+      match diag.severity? with
+      | some .information =>
+        let text := doc.meta.text
+        let line_start := text.lineStart (diag.range.end.line + 1)
+        let line_end :=  text.lineStart (diag.range.end.line + 2)
+
+        let line := (Substring.mk text.source line_start line_end).trimLeft.toString
+        let first_word_end := line.find (λ c => c == ' ')
+        let first_word := Substring.mk line (String.Pos.mk 0) first_word_end
+
+        let unfiltered := diag.toDiagnostic.message
+        let message := if first_word.toString = "#check" then
+          let colon_pos := unfiltered.find (λ c => c == ':')
+          (Substring.mk unfiltered colon_pos unfiltered.endPos).toString
+        else
+          unfiltered
+
+        let last_char_pos := text.leanPosToLspPos <| text.toPosition (line_end - (String.Pos.mk 1))
+        some ⟨last_char_pos, message⟩
+      | _ => none
+    -- let diag_0 := diags[0].toDiagnostic.
+    -- let diag_hints : Array InlayHint := diags
+    --   .filterMap
+    -- diags.map (fun diag => {
+      -- position:= diag.range.end,
+      -- label := diag.toDiagnostic.message,
+    -- })
+    -- let diag_hints := diag_hints.filter
 
     -- show the goal on each line, whenever it changes
     -- do this by finding goal at first non whitespace character of each line

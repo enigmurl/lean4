@@ -440,8 +440,15 @@ structure InlayHintParams extends WorkDoneProgressParams where
 structure InlayHint where
   position : Position
   label: String
-  kind: Nat
-  deriving Inhabited, BEq, FromJson, ToJson
+  deriving Inhabited, BEq
+
+instance : ToJson InlayHint where
+  toJson (hint : InlayHint) : Json := Json.mkObj [
+    ("position", toJson hint.position),
+    ("label", Json.str hint.label),
+    ("kind", Json.num 1), -- 1 indicates type hint
+    ("paddingLeft", Json.bool true)
+  ]
 
 end Lsp
 end Lean
