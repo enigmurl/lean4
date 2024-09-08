@@ -686,6 +686,7 @@ partial def handleWaitForDiagnostics (p : WaitForDiagnosticsParams)
 def handleInlayParam (p : InlayHintParams)
     : RequestM (RequestTask (Option (Array InlayHint))) := do
   let doc ← readDoc
+  let ctx ← read
 
   -- wait until diagnostics are finished
   RequestM.bindTask doc.reporter fun _ => do
@@ -714,20 +715,56 @@ def handleInlayParam (p : InlayHintParams)
         let last_char_pos := text.leanPosToLspPos <| text.toPosition (line_end - (String.Pos.mk 1))
         some ⟨last_char_pos, message⟩
       | _ => none
-    -- let diag_0 := diags[0].toDiagnostic.
-    -- let diag_hints : Array InlayHint := diags
-    --   .filterMap
-    -- diags.map (fun diag => {
-      -- position:= diag.range.end,
-      -- label := diag.toDiagnostic.message,
-    -- })
-    -- let diag_hints := diag_hints.filter
 
     -- show the goal on each line, whenever it changes
     -- do this by finding goal at first non whitespace character of each line
-    let goal_hints := 1
+    let goals := (List.range' 1 (doc.meta.text.getLastLine - 1)).filterMap λ line =>
+      -- find non whitespace character
+      let text := doc.meta.text
+      let line_start := text.lineStart line
+      let line_end := text.lineStart (line + 1)
+      let next_line_end := text.lineStart (line + 2)
 
-    RequestM.asTask (pure (some diag_hints))
+      let line_substr := Substring.mk text.source line_start line_end
+      let line_empty := line_substr.all fun c => c.isWhitespace
+      let next_substr := Substring.mk text.source line_end next_line_end
+      let next_empty := next_substr.all fun c => c.isWhitespace
+
+      -- only if this line is empty and next line isnt
+      -- not a perfect heuristic (due to comments and #check/etc)
+      if line_empty && !next_empty then
+        let first_non_white := next_substr.toString.find fun c => !c.isWhitespace
+        let request := PlainTermGoalParams.mk <| TextDocumentPositionParams.mk
+          p.textDocument
+          (Lsp.Position.mk line (first_non_white.byteIdx))
+        let goal := getInteractiveTermGoal request
+        some (text.leanPosToLspPos <| text.toPosition (line_end - ⟨1⟩), goal)
+      else
+        none
+
+    let rec awaited_goals (list : List (Lsp.Position × (RequestM <| RequestTask <| Option Widget.InteractiveTermGoal)))
+      : RequestM <| Task <| List <| InlayHint := do
+        match list with
+        | [] => pure (Task.pure [])
+        | (line, head) :: tail =>
+          let head' ← head
+          let head' := head'.get
+          let tail' ← (awaited_goals tail)
+          let tail' := tail'.get
+
+          let goal_list :=
+            match head' with
+            | .ok (some g) =>
+              let label := g.type.pretty
+              let hint := InlayHint.mk line label
+              hint :: tail'
+            |  _ => tail'
+
+          pure (Task.pure ( goal_list))
+
+    RequestM.bindTask (← awaited_goals goals) fun g =>
+      let all_hints := diag_hints ++ g.toArray
+      RequestM.asTask (pure (some all_hints))
 
 builtin_initialize
   registerLspRequestHandler
