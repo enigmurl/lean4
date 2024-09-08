@@ -716,8 +716,7 @@ def handleInlayParam (p : InlayHintParams)
         some ⟨last_char_pos, message⟩
       | _ => none
 
-    -- show the goal on each line, whenever it changes
-    -- do this by finding goal at first non whitespace character of each line
+    -- for all empty lines, find the goal on the next line
     let goals := (List.range' 1 (doc.meta.text.getLastLine - 1)).filterMap λ line =>
       -- find non whitespace character
       let text := doc.meta.text
