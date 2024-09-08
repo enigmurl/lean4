@@ -707,7 +707,7 @@ def handleInlayParam (p : InlayHintParams)
 
         let unfiltered := diag.toDiagnostic.message
         let message := if first_word.toString = "#check" then
-          let colon_pos := unfiltered.find (λ c => c == ':')
+          let colon_pos := (unfiltered.revFind (λ c => c == ':')).getD ⟨0⟩
           (Substring.mk unfiltered colon_pos unfiltered.endPos).toString
         else
           unfiltered
